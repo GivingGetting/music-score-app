@@ -12,13 +12,13 @@ export interface ScoreViewerHandle extends UseOSMDReturn {}
 const ScoreViewer = forwardRef<ScoreViewerHandle, ScoreViewerProps>(
   ({ musicXml, onReady }, ref) => {
     const osmdHandle = useOSMD();
-    const { containerRef, loadScore, isReady } = osmdHandle;
+    const { containerRef, loadScore, isReady, loadError } = osmdHandle;
 
     useImperativeHandle(ref, () => osmdHandle);
 
     useEffect(() => {
       if (!musicXml) return;
-      loadScore(musicXml).catch(console.error);
+      loadScore(musicXml);
     }, [musicXml, loadScore]);
 
     useEffect(() => {
@@ -34,10 +34,16 @@ const ScoreViewer = forwardRef<ScoreViewerHandle, ScoreViewerProps>(
             <p>乐谱将在此显示</p>
           </div>
         )}
+        {loadError && (
+          <div className="score-placeholder" style={{ color: "#e05c5c", flexDirection: "column", gap: 8 }}>
+            <p>⚠ 乐谱渲染失败</p>
+            <p style={{ fontSize: "0.8rem" }}>{loadError}</p>
+          </div>
+        )}
         <div
           ref={containerRef}
           className="score-container"
-          style={{ display: musicXml ? "block" : "none" }}
+          style={{ display: musicXml && !loadError ? "block" : "none" }}
         />
       </div>
     );

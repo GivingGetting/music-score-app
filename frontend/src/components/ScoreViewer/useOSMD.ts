@@ -6,6 +6,7 @@ export interface UseOSMDReturn {
   osmdRef: React.RefObject<OpenSheetMusicDisplay | null>;
   cursor: Cursor | null;
   isReady: boolean;
+  loadError: string | null;
   loadScore: (xml: string) => Promise<void>;
   resetCursor: () => void;
 }
@@ -15,14 +16,16 @@ export function useOSMD(): UseOSMDReturn {
   const osmdRef = useRef<OpenSheetMusicDisplay | null>(null);
   const [cursor, setCursor] = useState<Cursor | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadScore = useCallback(async (xml: string) => {
     if (!containerRef.current) return;
 
     setIsReady(false);
     setCursor(null);
+    setLoadError(null);
 
-    // Initialize or reuse OSMD instance
+    // Re-create OSMD if the container changed or this is first load
     if (!osmdRef.current) {
       osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
         autoResize: true,
@@ -44,8 +47,10 @@ export function useOSMD(): UseOSMDReturn {
       setCursor(c);
       setIsReady(true);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error("OSMD load error:", err);
-      throw err;
+      setLoadError(msg);
+      // Do NOT rethrow — caller (useEffect) would turn it into unhandled rejection
     }
   }, []);
 
@@ -56,5 +61,5 @@ export function useOSMD(): UseOSMDReturn {
     c.show();
   }, []);
 
-  return { containerRef, osmdRef, cursor, isReady, loadScore, resetCursor };
+  return { containerRef, osmdRef, cursor, isReady, loadError, loadScore, resetCursor };
 }
