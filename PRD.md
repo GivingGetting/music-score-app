@@ -3,7 +3,7 @@
 
 **Version:** 1.0
 **Date:** 2026-03-11
-**Status:** In Development
+**Status:** Production
 
 ---
 
@@ -262,7 +262,52 @@ Errors:
 
 ---
 
-## 7. 案例演示 (Use Case Demos)
+## 7. 生产部署 (Production Deployment)
+
+### 7.1 部署地址
+
+| 服务 | 地址 |
+|------|------|
+| 前端 (Vercel) | https://frontend-plum-theta-78.vercel.app |
+| 后端 (Railway) | https://music-score-app-production.up.railway.app |
+| 后端 API 文档 | https://music-score-app-production.up.railway.app/docs |
+| 健康检查 | https://music-score-app-production.up.railway.app/health |
+| GitHub 仓库 | https://github.com/GivingGetting/music-score-app |
+
+### 7.2 部署架构
+
+```
+GitHub (GivingGetting/music-score-app)
+    ├── /backend  ──→  Railway (Docker, python:3.11-slim + ffmpeg)
+    │                   PORT=8000, healthcheck /health
+    └── /frontend ──→  Vercel (Vite build, SPA rewrite)
+                        VITE_API_URL=https://music-score-app-production.up.railway.app
+```
+
+### 7.3 部署注意事项
+
+- **Railway `$PORT`**：CMD 使用 shell 形式 `CMD uvicorn ... --port ${PORT:-8000}`，确保变量展开。不要在 `railway.toml` 里写 `startCommand`（不走 shell，`$PORT` 不展开）
+- **Railway Variables**：需手动添加 `PORT=8000`，使 Railway ingress 路由到正确端口
+- **CORS**：后端通过 `allow_origin_regex=r"https://.*\.vercel\.app"` 自动允许所有 Vercel 预览 URL
+- **MusicXML DOCTYPE**：前端 `useOSMD.ts` 在传给 OSMD 前自动剥离 DOCTYPE 声明，避免外部 DTD fetch 报错
+- **首次 TensorFlow 加载**：basic-pitch 懒加载，第一次 `/transcribe` 请求会触发 TF 初始化（约 10–30s），建议保持服务常驻
+
+### 7.4 重新部署流程
+
+```bash
+# 后端：推送到 main 分支即自动触发 Railway 重新构建
+git push origin main
+
+# 前端：推送后手动触发 Vercel 部署
+cd frontend
+vercel --prod --scope donna-lius-projects \
+  --build-env VITE_API_URL=https://music-score-app-production.up.railway.app \
+  --env VITE_API_URL=https://music-score-app-production.up.railway.app
+```
+
+---
+
+## 8. 案例演示 (Use Case Demos)
 
 以下为三个典型用户场景的完整操作流程与预期效果，可用于演示、测试验收及新成员 onboarding。
 
@@ -447,25 +492,34 @@ banner 显示：「⚠ Failed to parse MusicXML: ...」
 
 ### 演示环境搭建
 
+**线上演示（推荐）：**
+```
+直接访问：https://frontend-plum-theta-78.vercel.app
+```
+
+**本地演示：**
 ```bash
 # 1. 启动服务
-cd /Users/donnaliu/Desktop/Liu/claude/music
+cd /path/to/music
 ./start.sh
 
 # 2. 准备演示素材
 #    Demo A：使用浏览器麦克风实时录音
-#    Demo B：复制上方《小星星》MusicXML 片段粘贴
+#    Demo B：复制上方《小星星》MusicXML 片段粘贴（去掉 DOCTYPE 行）
 #    Demo C：任意钢琴单音旋律 MP3（建议 10–30s，单声部）
 
 # 3. 访问地址
 open http://localhost:5173
 ```
 
-> **演示提示：** SoundFont 首次加载需 5–10 秒（从 CDN 获取钢琴采样），建议演示前先点击一次播放完成预加载，之后响应将即时。
+> **演示提示：**
+> - SoundFont 首次加载需 5–10 秒（从 CDN 获取钢琴采样），建议演示前先点击一次播放完成预加载
+> - 粘贴 MusicXML 时**无需包含 DOCTYPE 声明**，OSMD 不依赖它且可能触发外部请求
+> - 音频转录（`/transcribe`）第一次调用会触发 TensorFlow 初始化，耗时约 10–30 秒属正常现象
 
 ---
 
-## 8. 开发路线图 (Roadmap)
+## 9. 开发路线图 (Roadmap)
 
 ### v1.0 — 当前版本（已完成）
 
@@ -500,7 +554,7 @@ open http://localhost:5173
 
 ---
 
-## 8. 已知限制 (Known Limitations)
+## 10. 已知限制 (Known Limitations)
 
 | 限制 | 说明 | 计划改善 |
 |------|------|----------|
@@ -512,7 +566,7 @@ open http://localhost:5173
 
 ---
 
-## 9. 启动说明 (Getting Started)
+## 11. 启动说明 (Getting Started)
 
 ### 环境要求
 
@@ -550,4 +604,4 @@ npm run dev
 
 ---
 
-*文档版本: 1.0 | 最后更新: 2026-03-11*
+*文档版本: 1.0 | 最后更新: 2026-03-11 | 状态: 已上线生产*
