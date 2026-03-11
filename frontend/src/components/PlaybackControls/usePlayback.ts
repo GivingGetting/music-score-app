@@ -63,6 +63,7 @@ export function usePlayback(): UsePlaybackReturn {
   const stop = useCallback(() => {
     Tone.getTransport().stop();
     Tone.getTransport().cancel();
+    Tone.getTransport().position = 0;  // reset ticks to 0
     samplerRef.current?.releaseAll();
     setPlaybackState("idle");
   }, [setPlaybackState]);
@@ -74,9 +75,10 @@ export function usePlayback(): UsePlaybackReturn {
 
   const play = useCallback(
     async (notes: NoteEvent[], bpm: number, onStart?: () => void) => {
-      // Stop any existing playback
+      // Stop any existing playback and reset position
       Tone.getTransport().stop();
       Tone.getTransport().cancel();
+      Tone.getTransport().position = 0;
 
       try {
         await ensureSampler();
@@ -88,7 +90,7 @@ export function usePlayback(): UsePlaybackReturn {
       const sampler = samplerRef.current!;
       Tone.getTransport().bpm.value = bpm;
 
-      // Schedule all notes
+      // Schedule all notes at absolute transport positions (seconds from origin, position=0)
       notes.forEach((note) => {
         const noteName = midiToNoteName(note.pitch_midi);
         Tone.getTransport().schedule((time) => {
