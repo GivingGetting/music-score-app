@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import * as Tone from "tone";
 import type { Cursor } from "opensheetmusicdisplay";
 import type { NoteEvent } from "../types/music";
@@ -11,7 +11,32 @@ export function useSyncEngine(
   const rafIdRef = useRef<number>(0);
   const noteIndexRef = useRef<number>(0);
   const isActiveRef = useRef<boolean>(false);
+  // Keep a ref so tick closures always see the latest noteSchedule
+  const noteScheduleRef = useRef<NoteEvent[]>(noteSchedule);
   const setCurrentBeat = useMusicStore((s) => s.setCurrentBeat);
+
+  useEffect(() => {
+    noteScheduleRef.current = noteSchedule;
+  }, [noteSchedule]);
+
+  const tick = useCallback(() => {
+    if (!isActiveRef.current) return;
+
+    const currentBeat = Tone.getTransport().ticks / Tone.getTransport().PPQ;
+    setCurrentBeat(currentBeat);
+
+    const cursor = getCursor();
+    const schedule = noteScheduleRef.current;
+    if (cursor && noteIndexRef.current < schedule.length) {
+      const nextNote = schedule[noteIndexRef.current];
+      if (nextNote && currentBeat >= nextNote.start_beat - 0.05) {
+        cursor.next();
+        noteIndexRef.current++;
+      }
+    }
+
+    rafIdRef.current = requestAnimationFrame(tick);
+  }, [getCursor, setCurrentBeat]);
 
   const startSync = useCallback(() => {
     isActiveRef.current = true;
@@ -23,32 +48,12 @@ export function useSyncEngine(
       cursor.show();
     }
 
-    const tick = () => {
-      if (!isActiveRef.current) return;
-
-      const currentBeat = Tone.getTransport().ticks / Tone.getTransport().PPQ;
-      setCurrentBeat(currentBeat);
-
-      const cursor = getCursor();
-      if (cursor && noteIndexRef.current < noteSchedule.length) {
-        const nextNote = noteSchedule[noteIndexRef.current];
-        // Advance slightly early (50ms) to account for render lag
-        if (nextNote && currentBeat >= nextNote.start_beat - 0.05) {
-          cursor.next();
-          noteIndexRef.current++;
-        }
-      }
-
-      rafIdRef.current = requestAnimationFrame(tick);
-    };
-
     rafIdRef.current = requestAnimationFrame(tick);
-  }, [getCursor, noteSchedule, setCurrentBeat]);
+  }, [getCursor, tick]);
 
   const pauseSync = useCallback(() => {
     isActiveRef.current = false;
     cancelAnimationFrame(rafIdRef.current);
-    // Keep cursor at current position
   }, []);
 
   const stopSync = useCallback(() => {
@@ -66,25 +71,8 @@ export function useSyncEngine(
 
   const resumeSync = useCallback(() => {
     isActiveRef.current = true;
-    const tick = () => {
-      if (!isActiveRef.current) return;
-
-      const currentBeat = Tone.getTransport().ticks / Tone.getTransport().PPQ;
-      setCurrentBeat(currentBeat);
-
-      const cursor = getCursor();
-      if (cursor && noteIndexRef.current < noteSchedule.length) {
-        const nextNote = noteSchedule[noteIndexRef.current];
-        if (nextNote && currentBeat >= nextNote.start_beat - 0.05) {
-          cursor.next();
-          noteIndexRef.current++;
-        }
-      }
-
-      rafIdRef.current = requestAnimationFrame(tick);
-    };
     rafIdRef.current = requestAnimationFrame(tick);
-  }, [getCursor, noteSchedule, setCurrentBeat]);
+  }, [tick]);
 
   return { startSync, pauseSync, stopSync, resumeSync };
 }
