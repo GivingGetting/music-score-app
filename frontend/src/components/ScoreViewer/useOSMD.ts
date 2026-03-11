@@ -43,7 +43,9 @@ export function useOSMD(): UseOSMDReturn {
       await osmdRef.current.render();
 
       const c = osmdRef.current.cursor;
+      c.reset();
       c.show();
+      c.update();
       setCursor(c);
       setIsReady(true);
     } catch (err) {

@@ -31,6 +31,7 @@ export function useSyncEngine(
       const nextNote = schedule[noteIndexRef.current];
       if (nextNote && currentBeat >= nextNote.start_beat - 0.05) {
         cursor.next();
+        cursor.update(); // force OSMD to repaint cursor position
         noteIndexRef.current++;
       }
     }
@@ -46,6 +47,7 @@ export function useSyncEngine(
     if (cursor) {
       cursor.reset();
       cursor.show();
+      cursor.update();
     }
 
     rafIdRef.current = requestAnimationFrame(tick);
@@ -66,6 +68,7 @@ export function useSyncEngine(
     if (cursor) {
       cursor.reset();
       cursor.show();
+      cursor.update();
     }
   }, [getCursor, setCurrentBeat]);
 
