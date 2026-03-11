@@ -15,8 +15,13 @@ import "./App.css";
 export default function App() {
   const [mode, setMode] = useState<AppMode>("audio-to-score");
   const scoreViewerRef = useRef<ScoreViewerHandle>(null);
-  const { musicXml, isLoading, errorMessage, setScore, setError, setLoading, setBpm } =
-    useMusicStore((s) => s);
+  const musicXml = useMusicStore((s) => s.musicXml);
+  const isLoading = useMusicStore((s) => s.isLoading);
+  const errorMessage = useMusicStore((s) => s.errorMessage);
+  const setScore = useMusicStore((s) => s.setScore);
+  const setError = useMusicStore((s) => s.setError);
+  const setLoading = useMusicStore((s) => s.setLoading);
+  const setBpm = useMusicStore((s) => s.setBpm);
 
   const getCursor = useCallback((): Cursor | null => {
     return scoreViewerRef.current?.cursor ?? null;

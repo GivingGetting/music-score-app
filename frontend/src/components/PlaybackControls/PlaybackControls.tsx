@@ -11,12 +11,11 @@ interface PlaybackControlsProps {
 }
 
 export default function PlaybackControls({ getCursor, onBeforePlay }: PlaybackControlsProps) {
-  const { noteSchedule, bpm, playbackState, setBpm } = useMusicStore((s) => ({
-    noteSchedule: s.noteSchedule,
-    bpm: s.bpm,
-    playbackState: s.playbackState,
-    setBpm: s.setBpm,
-  }));
+  // Use individual selectors — object selector creates new ref every render → infinite loop
+  const noteSchedule = useMusicStore((s) => s.noteSchedule);
+  const bpm = useMusicStore((s) => s.bpm);
+  const playbackState = useMusicStore((s) => s.playbackState);
+  const setBpm = useMusicStore((s) => s.setBpm);
 
   const { play, pause, stop } = usePlayback();
   const { startSync, pauseSync, stopSync, resumeSync } = useSyncEngine(getCursor, noteSchedule);
