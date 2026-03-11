@@ -1,9 +1,9 @@
 fastapi>=0.111
 uvicorn[standard]>=0.29
 python-multipart>=0.0.9
+numpy>=1.26,<2.0
 basic-pitch>=0.3
 music21>=9.1
 pretty_midi>=0.2.10
-numpy>=1.26
 pydub>=0.25
 soundfile>=0.12
