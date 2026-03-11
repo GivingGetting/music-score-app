@@ -34,7 +34,9 @@ export function useOSMD(): UseOSMDReturn {
     }
 
     try {
-      await osmdRef.current.load(xml);
+      // Strip DOCTYPE — OSMD doesn't need it and it can trigger external fetch errors
+      const cleanXml = xml.replace(/<!DOCTYPE[^>]*>/i, "").trim();
+      await osmdRef.current.load(cleanXml);
       await osmdRef.current.render();
 
       const c = osmdRef.current.cursor;

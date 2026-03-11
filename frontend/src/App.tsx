@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from "react";
 import ScoreViewer from "./components/ScoreViewer/ScoreViewer";
 import type { ScoreViewerHandle } from "./components/ScoreViewer/ScoreViewer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import PlaybackControls from "./components/PlaybackControls/PlaybackControls";
 import FileUpload from "./components/FileUpload/FileUpload";
 import AudioRecorder from "./components/AudioRecorder/AudioRecorder";
@@ -104,7 +105,9 @@ export default function App() {
         </section>
 
         <section className="score-panel">
-          <ScoreViewer ref={scoreViewerRef} musicXml={musicXml} />
+          <ErrorBoundary>
+            <ScoreViewer ref={scoreViewerRef} musicXml={musicXml} />
+          </ErrorBoundary>
 
           {musicXml && (
             <PlaybackControls
