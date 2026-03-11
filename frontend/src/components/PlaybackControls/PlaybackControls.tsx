@@ -59,7 +59,8 @@ export default function PlaybackControls({ getCursor, onBeforePlay }: PlaybackCo
     [setBpm]
   );
 
-  const canPlay = noteSchedule.length > 0;
+  // onBeforePlay means score-to-audio mode: fetch notes on click, so always enabled
+  const canPlay = noteSchedule.length > 0 || !!onBeforePlay;
 
   return (
     <div className="playback-controls">
